@@ -1,0 +1,443 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Cycles et trajet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: une colonne de 560 px, deux onglets en tête, chaque onglet garde sa propre page. */
+  :root {
+    color-scheme: dark;
+    --bg: #12141a;
+    --card: #1a1d26;
+    --border: #262a36;
+    --control-border: #2c313f;
+    --on-bg: #2a3550;
+    --on-border: #3d4d70;
+    --on-fg: #dfe4f0;
+    --fg: #e8e6df;
+    --eyebrow: #6b7a8f;
+    --sub: #9a988f;
+    --muted: #8a8ba0;
+    --label: #7d8598;
+    --analysis-label: #9aa3b8;
+    --analysis-border: #2f3a44;
+    --analysis-start: #1e2433;
+    --divider: #2a2f3d;
+    --footer: #6b7280;
+    --green: #4fd08a;
+    --gold: #f0b93e;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: var(--font);
+    display: flex; justify-content: center;
+    padding-block: 32px;
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; max-width: 560px; min-width: 0; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 28px; }
+  .tab {
+    flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--control-border);
+    background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  .tab[aria-selected="true"] { background: var(--on-bg); border-color: var(--on-border); color: var(--on-fg); }
+
+  .eyebrow { font-size: 11px; letter-spacing: .22em; color: var(--eyebrow); font-weight: 600; margin-bottom: 16px; }
+  h1 { font-size: 40px; line-height: 1.05; font-weight: 700; letter-spacing: -.02em; }
+  .sub { color: var(--sub); font-size: 15px; line-height: 1.6; margin-top: 16px; max-width: 440px; }
+  .modeRow { display: flex; gap: 8px; margin: 24px 0 16px; }
+  .modeBtn {
+    flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--control-border);
+    background: transparent; color: var(--muted); font-size: 13px; line-height: 1.4;
+    cursor: pointer; font-family: inherit; text-align: left;
+  }
+  .modeBtn.on { background: var(--on-bg); border-color: var(--on-border); color: var(--on-fg); }
+  .modeBtn b { color: inherit; }
+  .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); margin-bottom: 24px; }
+  .toggleRow { display: flex; gap: 8px; margin-bottom: 16px; }
+  .toggle {
+    flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--control-border);
+    background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  .toggle.on { background: var(--on-bg); border-color: var(--on-border); color: var(--on-fg); }
+  .field { margin-top: 16px; }
+  .field:first-child { margin-top: 0; }
+  label { display: block; font-size: 12px; color: var(--label); margin-bottom: 8px; font-weight: 500; }
+  .auto { color: var(--green); font-weight: 400; }
+  input[type=time] {
+    background: var(--bg); border: 1px solid var(--control-border); border-radius: 10px; color: var(--fg);
+    padding: 10px 12px; font-size: 16px; font-family: inherit; width: 100%;
+  }
+  input[type=range] { width: 100%; accent-color: var(--green); }
+  .sliderRow { display: flex; align-items: center; gap: 12px; }
+  .sliderRow input[type=range] { flex: 1; width: auto; min-width: 0; }
+  input[type=number] {
+    width: 88px; flex-shrink: 0;
+    background: var(--bg); border: 1px solid var(--control-border); border-radius: 10px; color: var(--fg);
+    padding: 10px 12px; font-size: 16px; font-family: inherit; font-variant-numeric: tabular-nums;
+  }
+  .ageRow { display: flex; gap: 8px; }
+  .ageBtn {
+    flex: 1; min-width: 0; padding: 9px 6px; border-radius: 9px; border: 1px solid var(--control-border);
+    background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  .ageBtn.on { background: var(--on-bg); border-color: var(--on-border); color: var(--on-fg); }
+  .nowBox {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg); border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border);
+  }
+  .nowLabel { font-size: 13px; color: var(--label); }
+  .nowTime { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .analysis {
+    background: linear-gradient(135deg, var(--analysis-start), var(--card)); border-radius: 16px;
+    padding: 18px; border: 1px solid var(--analysis-border); margin-bottom: 16px;
+  }
+  #panel-trajet .analysis { margin-bottom: 20px; }
+  .analysisTop { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+  .analysisLabel { font-size: 13px; color: var(--analysis-label); }
+  .analysisBig { font-size: 20px; font-weight: 700; color: var(--on-fg); font-variant-numeric: tabular-nums; }
+  #cost { font-size: 24px; letter-spacing: -.01em; }
+  .analysisRow { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); gap: 8px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+  .analysisTip { font-size: 12.5px; color: var(--label); margin-top: 10px; line-height: 1.5; border-top: 1px solid var(--divider); padding-top: 10px; font-variant-numeric: tabular-nums; }
+  .good { color: var(--green); }
+  .warn { color: var(--gold); }
+  .results { background: var(--card); border-radius: 16px; padding: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
+  .hint { font-size: 13px; color: var(--label); padding: 12px 14px 8px; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 12px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .rowMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .bigTime { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .rowMeta { font-size: 12px; color: var(--label); }
+  .rowRight { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+  .tag { font-size: 11px; font-weight: 600; letter-spacing: .04em; border: 1px solid; border-radius: 6px; padding: 2px 8px; }
+  .rowDesc { font-size: 11px; color: var(--footer); }
+  .footer { font-size: 12.5px; color: var(--footer); line-height: 1.6; text-align: center; }
+  .hidden { display: none !important; }
+
+  /* Couleurs : violet pour les cycles, orange pour le trajet. */
+  #panel-cycles, #tab-cycles { --accent: #a29dff; --accent-bg: #2f2c6b; --accent-border: #6560d6; --accent-fg: #ecebff; --glow: #2a2760; }
+  #panel-trajet, #tab-trajet { --accent: #ffa95c; --accent-bg: #54300f; --accent-border: #c2702c; --accent-fg: #fff0e2; --glow: #452811; }
+  .tab[aria-selected="true"], .modeBtn.on, .toggle.on, .ageBtn.on { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent-fg); }
+  .eyebrow { color: var(--accent); }
+  h1 { background: linear-gradient(95deg, var(--fg) 25%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; padding-bottom: .08em; }
+  input[type=range] { accent-color: var(--accent); }
+  .auto { color: var(--accent); }
+  .analysis { background: linear-gradient(135deg, var(--glow), var(--card)); border-color: var(--accent-border); }
+  .analysisBig { color: var(--accent); }
+  .results { display: grid; gap: 6px; }
+  .row { background: color-mix(in srgb, var(--q) 12%, transparent); }
+  .rowDesc { color: var(--analysis-label); }
+  :focus-visible { outline: 2px solid var(--accent, var(--on-border)); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <div class="tabs" role="tablist" aria-label="Calculateurs">
+    <button type="button" class="tab" role="tab" id="tab-cycles" aria-controls="panel-cycles" aria-selected="true">Cycles de sommeil</button>
+    <button type="button" class="tab" role="tab" id="tab-trajet" aria-controls="panel-trajet" aria-selected="false">Coût de trajet</button>
+  </div>
+
+  <section id="panel-cycles" role="tabpanel" aria-labelledby="tab-cycles">
+    <div class="eyebrow">CALCULATEUR DE CYCLES</div>
+    <h1>Cale ton réveil<br>sur tes cycles</h1>
+    <p class="sub">Chaque cycle dure 90 min. Se réveiller à la fin d'un cycle plutôt qu'en plein sommeil profond rend le réveil bien plus facile.</p>
+
+    <div class="modeRow">
+      <button type="button" class="modeBtn on" id="modeWake">Je me couche →<br><b>heure de réveil</b></button>
+      <button type="button" class="modeBtn" id="modeSleep">Je dois me lever →<br><b>heure de coucher</b></button>
+    </div>
+
+    <div class="card">
+      <div id="wakeControls">
+        <div class="toggleRow">
+          <button type="button" class="toggle on" id="startNow">Maintenant</button>
+          <button type="button" class="toggle" id="startCustom">À une heure précise</button>
+        </div>
+        <div class="field hidden" id="bedField">
+          <label for="bedTime">Heure de coucher</label>
+          <input type="time" id="bedTime">
+        </div>
+        <div class="nowBox" id="nowBox">
+          <span class="nowLabel">Heure actuelle</span>
+          <span class="nowTime" id="nowTime">--:--</span>
+        </div>
+      </div>
+
+      <div class="field hidden" id="riseField">
+        <label for="riseTime">Heure à laquelle je dois me lever</label>
+        <input type="time" id="riseTime">
+      </div>
+
+      <div class="field">
+        <label>Tranche d'âge</label>
+        <div class="ageRow" id="ageRow"></div>
+      </div>
+
+      <div class="field">
+        <label for="fall" id="fallLabel">Temps d'endormissement · 15 min <span class="auto">(auto selon l'âge)</span></label>
+        <input type="range" min="0" max="35" step="1" value="15" id="fall">
+      </div>
+    </div>
+
+    <div id="output"></div>
+
+    <p class="footer">Vise 5 à 6 cycles pour un sommeil vraiment réparateur. Les cycles calent le meilleur moment de réveil, mais ne remplacent pas la durée totale. Les temps d'endormissement sont indicatifs et varient d'une personne à l'autre.</p>
+  </section>
+
+  <section id="panel-trajet" role="tabpanel" aria-labelledby="tab-trajet" hidden>
+    <div class="eyebrow">CALCULATEUR DE TRAJET</div>
+    <h1>Calcule le prix<br>de ton trajet</h1>
+    <p class="sub">Indique la distance, la consommation de ta voiture et le prix du carburant. Le coût se met à jour tout seul.</p>
+
+    <div class="modeRow">
+      <button type="button" class="modeBtn on" id="oneway" aria-pressed="true">Je fais →<br><b>aller simple</b></button>
+      <button type="button" class="modeBtn" id="roundtrip" aria-pressed="false">Je reviens →<br><b>aller-retour</b></button>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label for="distance-num">Distance (km)</label>
+        <div class="sliderRow">
+          <input type="range" id="distance-range" aria-label="Distance" min="1" max="1000" step="1" value="100">
+          <input type="number" id="distance-num" min="1" max="1000" step="1" value="100">
+        </div>
+      </div>
+      <div class="field">
+        <label for="conso-num">Consommation (L/100 km)</label>
+        <div class="sliderRow">
+          <input type="range" id="conso-range" aria-label="Consommation" min="3" max="15" step="0.1" value="6.5">
+          <input type="number" id="conso-num" min="3" max="15" step="0.1" value="6.5">
+        </div>
+      </div>
+      <div class="field">
+        <label for="prix-num">Prix du carburant (€/L)</label>
+        <div class="sliderRow">
+          <input type="range" id="prix-range" aria-label="Prix du carburant" min="1" max="2.5" step="0.01" value="1.75">
+          <input type="number" id="prix-num" min="1" max="2.5" step="0.01" value="1.75">
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis" aria-live="polite">
+      <div class="analysisTop">
+        <span class="analysisLabel" id="mode-label">Coût de l'aller simple</span>
+        <output class="analysisBig" id="cost">0,00 €</output>
+      </div>
+      <div class="analysisRow">
+        <span id="km"></span>
+        <span id="litres"></span>
+      </div>
+      <div class="analysisTip" id="per100"></div>
+    </div>
+
+    <p class="footer">Estimation du carburant uniquement. Les péages, le stationnement et l'usure de la voiture ne sont pas comptés.</p>
+  </section>
+</div>
+
+<script>
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* Onglets */
+  function showTab(name) {
+    ['cycles', 'trajet'].forEach(function (t) {
+      $('tab-' + t).setAttribute('aria-selected', t === name);
+      $('panel-' + t).hidden = t !== name;
+    });
+  }
+  function fromHash() { showTab(location.hash === '#trajet' ? 'trajet' : 'cycles'); }
+  ['cycles', 'trajet'].forEach(function (t) {
+    $('tab-' + t).onclick = function () {
+      showTab(t);
+      try { location.hash = t; } catch (e) {}
+    };
+  });
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  /* Cycles de sommeil */
+  var CYCLE = 90;
+  var AGE = { "13-25": 12, "26-40": 15, "41-60": 18, "60+": 22 };
+  var QUALITY = {
+    3: { label: "Court",   color: "#f2786a", desc: "Dépannage seulement" },
+    4: { label: "Minimum", color: "#f0b93e", desc: "Plancher acceptable" },
+    5: { label: "Idéal",   color: "#4fd08a", desc: "Recommandé" },
+    6: { label: "Complet", color: "#45c3e0", desc: "Récupération maximale" }
+  };
+
+  var state = { mode: "wake", startMode: "now", ageBand: "26-40", fall: 15, manualFall: false };
+  var now = new Date();
+
+  function fmt(d) {
+    return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  }
+  function dur(m) {
+    return Math.floor(m / 60) + "h" + String(m % 60).padStart(2, "0");
+  }
+  function parseToday(hhmm, future) {
+    var p = hhmm.split(":"), d = new Date();
+    d.setHours(+p[0], +p[1], 0, 0);
+    if (future && d < now) d.setDate(d.getDate() + 1);
+    return d;
+  }
+
+  var ageRow = $("ageRow");
+  Object.keys(AGE).forEach(function (band) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "ageBtn" + (band === state.ageBand ? " on" : "");
+    b.textContent = band;
+    b.onclick = function () {
+      state.ageBand = band; state.manualFall = false; state.fall = AGE[band];
+      $("fall").value = state.fall;
+      [].forEach.call(ageRow.children, function (c) { c.classList.toggle("on", c.textContent === band); });
+      render();
+    };
+    ageRow.appendChild(b);
+  });
+
+  $("modeWake").onclick = function () { setMode("wake"); };
+  $("modeSleep").onclick = function () { setMode("sleep"); };
+  function setMode(m) {
+    state.mode = m;
+    $("modeWake").classList.toggle("on", m === "wake");
+    $("modeSleep").classList.toggle("on", m === "sleep");
+    $("wakeControls").classList.toggle("hidden", m !== "wake");
+    $("riseField").classList.toggle("hidden", m !== "sleep");
+    render();
+  }
+
+  $("startNow").onclick = function () { setStart("now"); };
+  $("startCustom").onclick = function () { setStart("custom"); };
+  function setStart(sm) {
+    state.startMode = sm;
+    $("startNow").classList.toggle("on", sm === "now");
+    $("startCustom").classList.toggle("on", sm === "custom");
+    $("bedField").classList.toggle("hidden", sm !== "custom");
+    $("nowBox").classList.toggle("hidden", sm !== "now");
+    render();
+  }
+
+  $("fall").oninput = function () {
+    state.fall = +this.value; state.manualFall = true; render();
+  };
+  $("bedTime").oninput = render;
+  $("riseTime").oninput = render;
+
+  function rowHtml(n, time, duration) {
+    var q = QUALITY[n];
+    return '<div class="row" style="--q:' + q.color + '">' +
+      '<div class="dot" style="background:' + q.color + '"></div>' +
+      '<div class="rowMain"><span class="bigTime">' + fmt(time) + '</span>' +
+      '<span class="rowMeta">' + n + ' cycles · ' + duration + ' de sommeil</span></div>' +
+      '<div class="rowRight"><span class="tag" style="color:' + q.color + ';border-color:' + q.color + '">' + q.label + '</span>' +
+      '<span class="rowDesc">' + q.desc + '</span></div></div>';
+  }
+
+  function render() {
+    now = new Date();
+    $("nowTime").textContent = fmt(now);
+    $("fallLabel").innerHTML =
+      "Temps d'endormissement · " + state.fall + " min" +
+      (state.manualFall ? "" : ' <span class="auto">(auto selon l\'âge)</span>');
+
+    var out = $("output");
+    var html = "";
+
+    if (state.mode === "wake") {
+      var bedVal = $("bedTime").value;
+      if (state.startMode === "custom" && !bedVal) { out.innerHTML = ""; return; }
+      var base = (state.startMode === "custom" && bedVal) ? parseToday(bedVal, true) : now;
+      html += '<div class="results"><div class="hint">' +
+        (state.startMode === "custom"
+          ? "Si tu t'endors vers " + fmt(base) + ", réveille-toi à :"
+          : "Réveille-toi à l'une de ces heures :") + "</div>";
+      [3, 4, 5, 6].forEach(function (n) {
+        var t = new Date(base.getTime() + (state.fall + n * CYCLE) * 60000);
+        html += rowHtml(n, t, dur(n * CYCLE));
+      });
+      html += "</div>";
+    } else {
+      var riseVal = $("riseTime").value;
+      if (!riseVal) { out.innerHTML = ""; return; }
+      var rise = parseToday(riseVal, true);
+
+      var asleepAt = new Date(now.getTime() + state.fall * 60000);
+      var avail = Math.round((rise - asleepAt) / 60000);
+      if (avail > 0) {
+        var exact = Math.floor(avail / CYCLE);
+        var rem = avail % CYCLE;
+        var off = rem <= CYCLE / 2 ? rem : CYCLE - rem;
+        var nearest = rem <= CYCLE / 2 ? exact : exact + 1;
+        html += '<div class="analysis"><div class="analysisTop">' +
+          '<span class="analysisLabel">Si tu te couches maintenant</span>' +
+          '<span class="analysisBig">' + dur(avail) + ' de sommeil</span></div>' +
+          '<div class="analysisRow"><span>≈ ' + exact + ' cycles complets</span>' +
+          (off === 0
+            ? '<span class="good">pile en fin de cycle ✓</span>'
+            : '<span class="warn">réveil à ' + off + " min d'une fin de cycle</span>") +
+          "</div>" +
+          (off > 0
+            ? '<div class="analysisTip">Te coucher ' + off + " min " +
+              (rem <= CYCLE / 2 ? "plus tôt" : "plus tard") +
+              " te ferait tomber pile en fin de cycle (" + nearest + " cycles).</div>"
+            : "") +
+          "</div>";
+      } else {
+        html += '<div class="analysis"><div class="analysisLabel">' +
+          "Ton heure de lever est déjà passée ou trop proche — augmente l'écart.</div></div>";
+      }
+
+      html += '<div class="results"><div class="hint">Pour te lever à ' + fmt(rise) + ", couche-toi à :</div>";
+      [6, 5, 4, 3].forEach(function (n) {
+        var t = new Date(rise.getTime() - (n * CYCLE + state.fall) * 60000);
+        html += rowHtml(n, t, dur(n * CYCLE));
+      });
+      html += "</div>";
+    }
+    out.innerHTML = html;
+  }
+
+  setInterval(function () { if (state.startMode === "now" || state.mode === "sleep") render(); }, 30000);
+  render();
+
+  /* Coût de trajet */
+  var names = ['distance', 'conso', 'prix'];
+  var eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+  var num = function (d) { return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  var roundTrip = false;
+
+  function update() {
+    var distance = parseFloat($('distance-range').value);
+    var conso = parseFloat($('conso-range').value);
+    var prix = parseFloat($('prix-range').value);
+    var km = distance * (roundTrip ? 2 : 1);
+    var litres = km * conso / 100;
+    $('cost').textContent = eur.format(litres * prix);
+    $('km').textContent = num(0).format(km) + ' km au total';
+    $('litres').textContent = num(1).format(litres) + ' L de carburant';
+    $('per100').textContent = 'Soit ' + eur.format(conso * prix) + ' pour 100 km.';
+    $('mode-label').textContent = roundTrip ? "Coût de l'aller-retour" : "Coût de l'aller simple";
+    $('oneway').classList.toggle('on', !roundTrip);
+    $('roundtrip').classList.toggle('on', roundTrip);
+    $('oneway').setAttribute('aria-pressed', !roundTrip);
+    $('roundtrip').setAttribute('aria-pressed', roundTrip);
+  }
+
+  names.forEach(function (n) {
+    var range = $(n + '-range');
+    var field = $(n + '-num');
+    range.addEventListener('input', function () { field.value = range.value; update(); });
+    field.addEventListener('input', function () {
+      if (field.value !== '') { range.value = field.value; update(); }
+    });
+    field.addEventListener('blur', function () { field.value = range.value; });
+  });
+
+  $('oneway').onclick = function () { roundTrip = false; update(); };
+  $('roundtrip').onclick = function () { roundTrip = true; update(); };
+  update();
+</script>
+
+</body></html>
